@@ -260,6 +260,7 @@ const translations = {
     'comparisonSettings.provider': 'Provider',
     'comparisonSettings.models': 'Models',
     'comparisonSettings.noModels': 'No models selected.',
+    'comparisonSettings.inputTooLarge': 'Input is too large to calculate safely.',
     'comparison.title': 'Model comparison',
     'card.lowestCost': 'Lowest cost',
     'card.inputPrice': 'Input price',
@@ -294,6 +295,7 @@ const translations = {
     'comparisonSettings.provider': '品牌',
     'comparisonSettings.models': '模型',
     'comparisonSettings.noModels': '尚未选择模型。',
+    'comparisonSettings.inputTooLarge': '输入值过大，无法安全计算。',
     'comparison.title': '模型成本对比',
     'card.lowestCost': '成本最低',
     'card.inputPrice': '输入价格',
@@ -388,14 +390,6 @@ function format30Days(cost) {
   return `$${cost.toFixed(2)}`;
 }
 
-/**
- * Calculate cost for a single model
- * @param {Object} model
- * @param {number} inputTokens
- * @param {number} outputTokens
- * @param {number} requestsPerDay
- * @returns {Object}
- */
 /**
  * Return effective input and output token prices based on input tokens and long-context rules
  * @param {Object} model
@@ -519,7 +513,7 @@ function renderCrossProviderGroups() {
       const isChecked = crossProviderSelected.has(m.model) ? 'checked' : '';
       return `
         <label class="model-checkbox-label">
-          <input type="checkbox" class="cross-model-checkbox" data-provider="${provider}" value="${m.model}" ${isChecked}>
+          <input type="checkbox" class="cross-model-checkbox" value="${m.model}" ${isChecked}>
           <span class="model-label-text">${m.model}</span>
         </label>
       `;
@@ -575,6 +569,23 @@ function setComparisonMode(mode) {
 }
 
 /**
+ * Render a message in the comparison grid (e.g. empty state or overflow message)
+ * @param {string} key
+ * @param {string} fallbackText
+ */
+function renderComparisonMessage(key, fallbackText) {
+  const container = document.getElementById('model-grid');
+  if (!container) return;
+
+  const dict = translations[currentLang] || translations[DEFAULT_LANG];
+  const text = dict[key] || fallbackText;
+
+  container.innerHTML = `
+    <div class="empty-state" data-i18n="${key}">${text}</div>
+  `;
+}
+
+/**
  * Render dynamic model cards from calculated models list
  * @param {Array} modelsWithCost
  */
@@ -583,9 +594,7 @@ function renderModelCards(modelsWithCost) {
   if (!container) return;
 
   if (modelsWithCost.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state" data-i18n="comparisonSettings.noModels">No models selected.</div>
-    `;
+    renderComparisonMessage('comparisonSettings.noModels', 'No models selected.');
     return;
   }
 
@@ -650,10 +659,28 @@ function updateComparison() {
 
   const selectedModels = getSelectedModels();
 
+  if (selectedModels.length === 0) {
+    renderComparisonMessage('comparisonSettings.noModels', 'No models selected.');
+    applyTranslations(currentLang);
+    return;
+  }
+
   // Calculate costs without mutating original MODEL_PRICING array
   const calculated = selectedModels.map((model) =>
     calculateModelCost(model, inputTokens, outputTokens, requestsPerDay)
   );
+
+  const hasOverflow = calculated.some((item) =>
+    !Number.isFinite(item.costPerRequest) ||
+    !Number.isFinite(item.costPerDay) ||
+    !Number.isFinite(item.cost30Days)
+  );
+
+  if (hasOverflow) {
+    renderComparisonMessage('comparisonSettings.inputTooLarge', 'Input is too large to calculate safely.');
+    applyTranslations(currentLang);
+    return;
+  }
 
   // Sort ascending by 30-day estimate
   calculated.sort((a, b) => a.cost30Days - b.cost30Days);
