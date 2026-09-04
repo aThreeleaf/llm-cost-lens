@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLM Cost Lens</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-nav">
+        <h1 class="header-title">LLM Cost Lens</h1>
+        <!-- Language Switcher -->
+        <div class="lang-switch" role="group" aria-label="Language selection">
+          <button type="button" class="lang-btn active" data-lang="en" aria-pressed="true">EN</button>
+          <span class="lang-divider" aria-hidden="true">|</span>
+          <button type="button" class="lang-btn" data-lang="zh" aria-pressed="false">中文</button>
+        </div>
+      </div>
+      <p class="header-subtitle" data-i18n="header.subtitle">Compare estimated API costs across leading AI models.</p>
+      <p class="header-description" data-i18n="header.description">Estimate and compare LLM API spending before you ship.</p>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Calculator Section -->
+      <section class="section calculator-section" aria-labelledby="calculator-heading">
+        <div class="section-header">
+          <h2 id="calculator-heading" class="section-title" data-i18n="calculator.title">Calculator</h2>
+        </div>
+        <form class="calculator-form" id="calculator-form" onsubmit="return false;">
+          <div class="calculator-grid">
+            <div class="field-group">
+              <label for="input-tokens" class="field-label" data-i18n="calculator.inputTokens">Input tokens / request</label>
+              <input
+                type="number"
+                id="input-tokens"
+                name="input-tokens"
+                class="field-input"
+                value="10000"
+                min="0"
+                step="1"
+              >
+            </div>
+            <div class="field-group">
+              <label for="output-tokens" class="field-label" data-i18n="calculator.outputTokens">Output tokens / request</label>
+              <input
+                type="number"
+                id="output-tokens"
+                name="output-tokens"
+                class="field-input"
+                value="2000"
+                min="0"
+                step="1"
+              >
+            </div>
+            <div class="field-group">
+              <label for="requests-per-day" class="field-label" data-i18n="calculator.requestsPerDay">Requests / day</label>
+              <input
+                type="number"
+                id="requests-per-day"
+                name="requests-per-day"
+                class="field-input"
+                value="100"
+                min="1"
+                step="1"
+              >
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <!-- Model Comparison Section -->
+      <section class="section comparison-section" aria-labelledby="comparison-heading">
+        <div class="section-header comparison-header">
+          <h2 id="comparison-heading" class="section-title" data-i18n="comparison.title">Model comparison</h2>
+          <span class="badge badge-demo" data-i18n="common.demoData">Demo data</span>
+        </div>
+
+        <div class="model-grid">
+          <!-- Card: Model Alpha -->
+          <article class="model-card">
+            <div class="card-header">
+              <div class="model-info">
+                <span class="provider-name">Provider Alpha</span>
+                <h3 class="model-name">Model Alpha</h3>
+              </div>
+              <div class="card-badge-container">
+                <!-- Reserved UI for Lowest cost badge (hidden by default until calculation logic is implemented) -->
+                <span class="badge badge-lowest" data-i18n="card.lowestCost" hidden>Lowest cost</span>
+                <span class="badge badge-demo" data-i18n="common.demoData">Demo data</span>
+              </div>
+            </div>
+
+            <div class="card-metrics">
+              <div class="metric-row">
+                <span class="metric-label" data-i18n="card.inputPrice">Input price</span>
+                <span class="metric-value">—</span>
+              </div>
+              <div class="metric-row">
+                <span class="metric-label" data-i18n="card.outputPrice">Output price</span>
+                <span class="metric-value">—</span>
+              </div>
+              <div class="metric-row">
+                <span class="metric-label" data-i18n="card.perRequest">Per request</span>
+                <span class="metric-value">—</span>
+              </div>
+              <div class="metric-row">
+                <span class="metric-label" data-i18n="card.perDay">Per day</span>
+                <span class="metric-value">—</span>
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <span class="estimate-label" data-i18n="card.estimate30Day">30-day estimate</span>
+              <span class="estimate-value">—</span>
+            </div>
+          </article>
+
+          <!-- Card: Model Beta -->
+          <article class="model-card">
+            <div class="card-header">
+              <div class="model-info">
+                <span class="provider-name">Provider Beta</span>
+                <h3 class="model-name">Model Beta</h3>
+              </div>
+              <div class="card-badge-container">
+                <span class="badge badge-demo" data-i18n="common.demoData">Demo data</span>
+              </div>
+            </div>
+
+            <div class="card-metrics">
+              <div class="metric-row">
+                <span class="metric-label" data-i18n="card.inputPrice">Input price</span>
+                <span class="metric-value">—</span>
+              </div>
+              <div class="metric-row">
+                <span class="metric-label" data-i18n="card.outputPrice">Output price</span>
+                <span class="metric-value">—</span>
+              </div>
+              <div class="metric-row">
+                <span class="metric-label" data-i18n="card.perRequest">Per request</span>
+                <span class="metric-value">—</span>
+              </div>
+              <div class="metric-row">
+                <span class="metric-label" data-i18n="card.perDay">Per day</span>
+                <span class="metric-value">—</span>
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <span class="estimate-label" data-i18n="card.estimate30Day">30-day estimate</span>
+              <span class="estimate-value">—</span>
+            </div>
+          </article>
+
+          <!-- Card: Model Gamma -->
+          <article class="model-card">
+            <div class="card-header">
+              <div class="model-info">
+                <span class="provider-name">Provider Gamma</span>
+                <h3 class="model-name">Model Gamma</h3>
+              </div>
+              <div class="card-badge-container">
+                <span class="badge badge-demo" data-i18n="common.demoData">Demo data</span>
+              </div>
+            </div>
+
+            <div class="card-metrics">
+              <div class="metric-row">
+                <span class="metric-label" data-i18n="card.inputPrice">Input price</span>
+                <span class="metric-value">—</span>
+              </div>
+              <div class="metric-row">
+                <span class="metric-label" data-i18n="card.outputPrice">Output price</span>
+                <span class="metric-value">—</span>
+              </div>
+              <div class="metric-row">
+                <span class="metric-label" data-i18n="card.perRequest">Per request</span>
+                <span class="metric-value">—</span>
+              </div>
+              <div class="metric-row">
+                <span class="metric-label" data-i18n="card.perDay">Per day</span>
+                <span class="metric-value">—</span>
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <span class="estimate-label" data-i18n="card.estimate30Day">30-day estimate</span>
+              <span class="estimate-value">—</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- Details Section: Pricing Info & Known Limitations -->
+      <div class="details-grid">
+        <!-- Pricing Sources -->
+        <section class="section detail-box" aria-labelledby="pricing-sources-heading">
+          <h2 id="pricing-sources-heading" class="section-title" data-i18n="pricing.title">Pricing sources</h2>
+          <p class="detail-description" data-i18n="pricing.description">Official pricing sources will be added after verification.</p>
+          <div class="audit-status">
+            <span class="audit-label" data-i18n="pricing.lastChecked">Last checked:</span>
+            <span class="audit-value" data-i18n="pricing.pendingVerification">Pending verification</span>
+          </div>
+        </section>
+
+        <!-- Known Limitations -->
+        <section class="section detail-box" aria-labelledby="limitations-heading">
+          <h2 id="limitations-heading" class="section-title" data-i18n="limitations.title">Known limitations</h2>
+          <ul class="limitations-list">
+            <li data-i18n="limitations.item1">Standard text token pricing only</li>
+            <li data-i18n="limitations.item2">Cached input pricing is not included</li>
+            <li data-i18n="limitations.item3">Batch API discounts are not included</li>
+            <li data-i18n="limitations.item4">Tool calls and other API-specific charges are not included</li>
+            <li data-i18n="limitations.item5">Actual token usage may differ by provider and model</li>
+          </ul>
+        </section>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <p class="footer-note" data-i18n="footer.note">LLM Cost Lens &mdash; Phase 1 Skeleton</p>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
