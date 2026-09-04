@@ -1,9 +1,6 @@
 /**
  * LLM Cost Lens
- * Phase 2: Verified Model Pricing & Dynamic Card Rendering
- *
- * NOTE: Calculation logic, sorting, and lowest-cost detection are
- * strictly omitted in Phase 2 per design specifications.
+ * Phase 3: Cost Calculation, Real-time Updates & Lowest Cost Detection
  */
 
 'use strict';
@@ -12,6 +9,8 @@ const STORAGE_KEY = 'llm_cost_lens_lang';
 const DEFAULT_LANG = 'en';
 
 const LAST_CHECKED = '2026-09-04';
+
+let currentLang = DEFAULT_LANG;
 
 const MODEL_PRICING = [
   {
@@ -104,6 +103,7 @@ const translations = {
     'calculator.outputTokens': 'Output tokens / request',
     'calculator.requestsPerDay': 'Requests / day',
     'comparison.title': 'Model comparison',
+    'card.lowestCost': 'Lowest cost',
     'card.inputPrice': 'Input price',
     'card.outputPrice': 'Output price',
     'card.perRequest': 'Per request',
@@ -131,6 +131,7 @@ const translations = {
     'calculator.outputTokens': '每次请求输出 Token 数',
     'calculator.requestsPerDay': '每日请求次数',
     'comparison.title': '模型成本对比',
+    'card.lowestCost': '成本最低',
     'card.inputPrice': '输入价格',
     'card.outputPrice': '输出价格',
     'card.perRequest': '单次请求',
@@ -153,55 +154,182 @@ const translations = {
 };
 
 /**
- * Format token price to standard USD string
+ * Parse input string to safe non-negative finite number
+ * @param {string|number} value
+ * @returns {number}
+ */
+function parseNonNegativeNumber(value) {
+  const num = Number(value);
+  if (isNaN(num) || !isFinite(num) || num < 0) {
+    return 0;
+  }
+  return num;
+}
+
+/**
+ * Format token price to standard USD string ($X.XX / 1M tokens)
  * @param {number} price
  * @returns {string}
  */
-function formatPrice(price) {
+function formatTokenPrice(price) {
   return `$${price.toFixed(2)} / 1M tokens`;
 }
 
 /**
- * Render dynamic model cards from MODEL_PRICING array
+ * Format dynamic cost values for per-request and per-day:
+ * - cost === 0: $0.00
+ * - 0 < cost < 0.01: up to 8 decimals, trimmed trailing zeros, minimum 4 decimals
+ * - cost >= 0.01: up to 4 decimals, trimmed trailing zeros, minimum 2 decimals
+ * @param {number} cost
+ * @returns {string}
  */
-function renderModelCards() {
+function formatDynamicCost(cost) {
+  if (cost === 0) {
+    return '$0.00';
+  }
+
+  if (cost < 0.01) {
+    const str = cost.toFixed(8).replace(/0+$/, '');
+    const parts = str.split('.');
+    const decimals = parts[1] || '';
+    if (decimals.length < 4) {
+      return `$${parts[0]}.${decimals.padEnd(4, '0')}`;
+    }
+    return `$${str}`;
+  }
+
+  const str = cost.toFixed(4).replace(/0+$/, '');
+  const parts = str.split('.');
+  const decimals = parts[1] || '';
+  if (decimals.length < 2) {
+    return `$${parts[0]}.${decimals.padEnd(2, '0')}`;
+  }
+  return `$${str}`;
+}
+
+function formatPerRequest(cost) {
+  return formatDynamicCost(cost);
+}
+
+function formatPerDay(cost) {
+  return formatDynamicCost(cost);
+}
+
+/**
+ * Format 30-day estimate (strictly 2 decimal places, e.g. $13.20, $600.00)
+ * @param {number} cost
+ * @returns {string}
+ */
+function format30Days(cost) {
+  return `$${cost.toFixed(2)}`;
+}
+
+/**
+ * Calculate cost for a single model
+ * @param {Object} model
+ * @param {number} inputTokens
+ * @param {number} outputTokens
+ * @param {number} requestsPerDay
+ * @returns {Object}
+ */
+function calculateModelCost(model, inputTokens, outputTokens, requestsPerDay) {
+  const costPerRequest =
+    (inputTokens / 1000000) * model.inputPrice +
+    (outputTokens / 1000000) * model.outputPrice;
+
+  const costPerDay = costPerRequest * requestsPerDay;
+  const cost30Days = costPerDay * 30;
+
+  return {
+    ...model,
+    costPerRequest,
+    costPerDay,
+    cost30Days
+  };
+}
+
+/**
+ * Render dynamic model cards from calculated models list
+ * @param {Array} modelsWithCost
+ */
+function renderModelCards(modelsWithCost) {
   const container = document.getElementById('model-grid');
   if (!container) return;
 
-  container.innerHTML = MODEL_PRICING.map((item) => `
-    <article class="model-card">
-      <div class="card-header">
-        <div class="model-info">
-          <span class="provider-name">${item.provider}</span>
-          <h3 class="model-name">${item.model}</h3>
-        </div>
-      </div>
+  // Identify minimum 30-day cost
+  const minCost = modelsWithCost.length > 0
+    ? Math.min(...modelsWithCost.map(m => m.cost30Days))
+    : 0;
 
-      <div class="card-metrics">
-        <div class="metric-row">
-          <span class="metric-label" data-i18n="card.inputPrice">Input price</span>
-          <span class="metric-value">${formatPrice(item.inputPrice)}</span>
-        </div>
-        <div class="metric-row">
-          <span class="metric-label" data-i18n="card.outputPrice">Output price</span>
-          <span class="metric-value">${formatPrice(item.outputPrice)}</span>
-        </div>
-        <div class="metric-row">
-          <span class="metric-label" data-i18n="card.perRequest">Per request</span>
-          <span class="metric-value">—</span>
-        </div>
-        <div class="metric-row">
-          <span class="metric-label" data-i18n="card.perDay">Per day</span>
-          <span class="metric-value">—</span>
-        </div>
-      </div>
+  container.innerHTML = modelsWithCost.map((item) => {
+    const isLowest = Math.abs(item.cost30Days - minCost) < 1e-10;
+    const lowestBadgeHtml = isLowest
+      ? `<span class="badge badge-lowest" data-i18n="card.lowestCost">Lowest cost</span>`
+      : '';
 
-      <div class="card-footer">
-        <span class="estimate-label" data-i18n="card.estimate30Day">30-day estimate</span>
-        <span class="estimate-value">—</span>
-      </div>
-    </article>
-  `).join('');
+    return `
+      <article class="model-card">
+        <div class="card-header">
+          <div class="model-info">
+            <span class="provider-name">${item.provider}</span>
+            <h3 class="model-name">${item.model}</h3>
+          </div>
+          ${lowestBadgeHtml}
+        </div>
+
+        <div class="card-metrics">
+          <div class="metric-row">
+            <span class="metric-label" data-i18n="card.inputPrice">Input price</span>
+            <span class="metric-value">${formatTokenPrice(item.inputPrice)}</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label" data-i18n="card.outputPrice">Output price</span>
+            <span class="metric-value">${formatTokenPrice(item.outputPrice)}</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label" data-i18n="card.perRequest">Per request</span>
+            <span class="metric-value">${formatPerRequest(item.costPerRequest)}</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label" data-i18n="card.perDay">Per day</span>
+            <span class="metric-value">${formatPerDay(item.costPerDay)}</span>
+          </div>
+        </div>
+
+        <div class="card-footer">
+          <span class="estimate-label" data-i18n="card.estimate30Day">30-day estimate</span>
+          <span class="estimate-value">${format30Days(item.cost30Days)}</span>
+        </div>
+      </article>
+    `;
+  }).join('');
+}
+
+/**
+ * Main update routine: read inputs, calculate costs, sort, and render
+ */
+function updateComparison() {
+  const inputTokensVal = document.getElementById('input-tokens')?.value;
+  const outputTokensVal = document.getElementById('output-tokens')?.value;
+  const requestsPerDayVal = document.getElementById('requests-per-day')?.value;
+
+  const inputTokens = parseNonNegativeNumber(inputTokensVal);
+  const outputTokens = parseNonNegativeNumber(outputTokensVal);
+  const requestsPerDay = parseNonNegativeNumber(requestsPerDayVal);
+
+  // Calculate costs without mutating original MODEL_PRICING array
+  const calculated = MODEL_PRICING.map((model) =>
+    calculateModelCost(model, inputTokens, outputTokens, requestsPerDay)
+  );
+
+  // Sort ascending by 30-day estimate
+  calculated.sort((a, b) => a.cost30Days - b.cost30Days);
+
+  // Render cards
+  renderModelCards(calculated);
+
+  // Ensure current language translations are correctly applied to the newly rendered cards
+  applyTranslations(currentLang);
 }
 
 /**
@@ -256,13 +384,13 @@ function applyTranslations(lang) {
  * @param {string} lang - 'en' | 'zh'
  */
 function setLanguage(lang) {
-  const validLang = translations[lang] ? lang : DEFAULT_LANG;
+  currentLang = translations[lang] ? lang : DEFAULT_LANG;
   try {
-    localStorage.setItem(STORAGE_KEY, validLang);
+    localStorage.setItem(STORAGE_KEY, currentLang);
   } catch (err) {
     // Graceful fallback if localStorage is unavailable
   }
-  applyTranslations(validLang);
+  applyTranslations(currentLang);
 }
 
 /**
@@ -282,9 +410,16 @@ function getInitialLanguage() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Render model cards and pricing sources
-  renderModelCards();
+  // Render static sources first
   renderPricingSources();
+
+  // Bind input listeners for real-time calculation
+  ['input-tokens', 'output-tokens', 'requests-per-day'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', updateComparison);
+    }
+  });
 
   // Bind language switcher
   const langSwitch = document.querySelector('.lang-switch');
@@ -300,7 +435,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Apply initial language
-  const initialLang = getInitialLanguage();
-  setLanguage(initialLang);
+  // Set initial language preference
+  currentLang = getInitialLanguage();
+
+  // Run initial calculation and render
+  updateComparison();
 });
