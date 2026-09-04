@@ -72,6 +72,49 @@
         </form>
       </section>
 
+      <!-- Comparison Settings Section -->
+      <section class="section comparison-settings-section" aria-labelledby="comparison-settings-heading">
+        <div class="section-header">
+          <h2 id="comparison-settings-heading" class="section-title" data-i18n="comparisonSettings.title">Comparison settings</h2>
+        </div>
+
+        <div class="mode-switch-group" role="group" aria-label="Comparison mode">
+          <button
+            type="button"
+            id="mode-btn-same"
+            class="mode-btn active"
+            aria-pressed="true"
+            data-mode="same"
+            data-i18n="comparisonSettings.sameProvider"
+          >Same provider</button>
+          <button
+            type="button"
+            id="mode-btn-cross"
+            class="mode-btn"
+            aria-pressed="false"
+            data-mode="cross"
+            data-i18n="comparisonSettings.crossProvider"
+          >Cross provider</button>
+        </div>
+
+        <!-- Same provider controls -->
+        <div id="same-provider-controls" class="mode-controls">
+          <div class="field-group same-provider-group">
+            <label for="same-provider-select" class="field-label" data-i18n="comparisonSettings.provider">Provider</label>
+            <select id="same-provider-select" class="form-select"></select>
+          </div>
+          <div class="field-group models-selection-group">
+            <label class="field-label" data-i18n="comparisonSettings.models">Models</label>
+            <div id="same-provider-models" class="model-checkbox-grid"></div>
+          </div>
+        </div>
+
+        <!-- Cross provider controls -->
+        <div id="cross-provider-controls" class="mode-controls" hidden>
+          <div id="cross-provider-groups" class="cross-provider-groups"></div>
+        </div>
+      </section>
+
       <!-- Model Comparison Section -->
       <section class="section comparison-section" aria-labelledby="comparison-heading">
         <div class="section-header comparison-header">

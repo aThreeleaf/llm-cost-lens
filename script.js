@@ -1,6 +1,6 @@
 /**
  * LLM Cost Lens
- * Phase 3: Cost Calculation, Real-time Updates & Lowest Cost Detection
+ * Phase 4: Comparison Modes (Same Provider vs Cross Provider)
  */
 
 'use strict';
@@ -11,32 +11,60 @@ const DEFAULT_LANG = 'en';
 const LAST_CHECKED = '2026-09-04';
 
 let currentLang = DEFAULT_LANG;
+let comparisonMode = 'same'; // 'same' | 'cross'
 
 const MODEL_PRICING = [
+  // OpenAI (4 models)
   {
     provider: 'OpenAI',
     model: 'GPT-6 Astra',
     inputPrice: 10,
-    outputPrice: 50
+    outputPrice: 50,
+    longContext: {
+      threshold: 272000,
+      inclusive: false,
+      inputPrice: 20,
+      outputPrice: 75
+    }
   },
   {
     provider: 'OpenAI',
     model: 'GPT-5.6 Sol',
     inputPrice: 4,
-    outputPrice: 20
+    outputPrice: 20,
+    longContext: {
+      threshold: 272000,
+      inclusive: false,
+      inputPrice: 8,
+      outputPrice: 30
+    }
   },
   {
     provider: 'OpenAI',
     model: 'GPT-5.6 Terra',
     inputPrice: 2,
-    outputPrice: 12
+    outputPrice: 12,
+    longContext: {
+      threshold: 272000,
+      inclusive: false,
+      inputPrice: 4,
+      outputPrice: 18
+    }
   },
   {
     provider: 'OpenAI',
     model: 'GPT-5.6 Luna',
     inputPrice: 0.2,
-    outputPrice: 1.2
+    outputPrice: 1.2,
+    longContext: {
+      threshold: 272000,
+      inclusive: false,
+      inputPrice: 0.4,
+      outputPrice: 1.8
+    }
   },
+
+  // Anthropic (4 models)
   {
     provider: 'Anthropic',
     model: 'Claude Fable 5.1',
@@ -61,6 +89,8 @@ const MODEL_PRICING = [
     inputPrice: 1,
     outputPrice: 5
   },
+
+  // Google (7 models)
   {
     provider: 'Google',
     model: 'Gemini 3.8 Flash',
@@ -68,10 +98,132 @@ const MODEL_PRICING = [
     outputPrice: 3.75
   },
   {
+    provider: 'Google',
+    model: 'Gemini 3.7 Flash',
+    inputPrice: 0.75,
+    outputPrice: 3.75
+  },
+  {
+    provider: 'Google',
+    model: 'Gemini 3.6 Flash',
+    inputPrice: 0.75,
+    outputPrice: 3.75
+  },
+  {
+    provider: 'Google',
+    model: 'Gemini 3.5 Flash',
+    inputPrice: 1.5,
+    outputPrice: 9
+  },
+  {
+    provider: 'Google',
+    model: 'Gemini 3.5 Flash-Lite',
+    inputPrice: 0.3,
+    outputPrice: 2.5
+  },
+  {
+    provider: 'Google',
+    model: 'Gemini 3.1 Flash-Lite',
+    inputPrice: 0.25,
+    outputPrice: 1.5
+  },
+  {
+    provider: 'Google',
+    model: 'Gemini 3.1 Pro Preview',
+    inputPrice: 2,
+    outputPrice: 12,
+    longContext: {
+      threshold: 200000,
+      inclusive: false,
+      inputPrice: 4,
+      outputPrice: 18
+    }
+  },
+
+  // xAI (7 models)
+  {
     provider: 'xAI',
     model: 'Grok 4.6',
     inputPrice: 2,
-    outputPrice: 6
+    outputPrice: 6,
+    longContext: {
+      threshold: 200000,
+      inclusive: true,
+      inputPrice: 4,
+      outputPrice: 12
+    }
+  },
+  {
+    provider: 'xAI',
+    model: 'Grok Build 0.1',
+    inputPrice: 1,
+    outputPrice: 2,
+    longContext: {
+      threshold: 200000,
+      inclusive: true,
+      inputPrice: 2,
+      outputPrice: 4
+    }
+  },
+  {
+    provider: 'xAI',
+    model: 'Grok 4.5',
+    inputPrice: 2,
+    outputPrice: 6,
+    longContext: {
+      threshold: 200000,
+      inclusive: true,
+      inputPrice: 4,
+      outputPrice: 12
+    }
+  },
+  {
+    provider: 'xAI',
+    model: 'Grok 4.3',
+    inputPrice: 1.25,
+    outputPrice: 2.5,
+    longContext: {
+      threshold: 200000,
+      inclusive: true,
+      inputPrice: 2.5,
+      outputPrice: 5
+    }
+  },
+  {
+    provider: 'xAI',
+    model: 'Grok 4.20 Multi-Agent',
+    inputPrice: 1.25,
+    outputPrice: 2.5,
+    longContext: {
+      threshold: 200000,
+      inclusive: true,
+      inputPrice: 2.5,
+      outputPrice: 5
+    }
+  },
+  {
+    provider: 'xAI',
+    model: 'Grok 4.20 Reasoning',
+    inputPrice: 1.25,
+    outputPrice: 2.5,
+    longContext: {
+      threshold: 200000,
+      inclusive: true,
+      inputPrice: 2.5,
+      outputPrice: 5
+    }
+  },
+  {
+    provider: 'xAI',
+    model: 'Grok 4.20 Non-Reasoning',
+    inputPrice: 1.25,
+    outputPrice: 2.5,
+    longContext: {
+      threshold: 200000,
+      inclusive: true,
+      inputPrice: 2.5,
+      outputPrice: 5
+    }
   }
 ];
 
@@ -102,6 +254,12 @@ const translations = {
     'calculator.inputTokens': 'Input tokens / request',
     'calculator.outputTokens': 'Output tokens / request',
     'calculator.requestsPerDay': 'Requests / day',
+    'comparisonSettings.title': 'Comparison settings',
+    'comparisonSettings.sameProvider': 'Same provider',
+    'comparisonSettings.crossProvider': 'Cross provider',
+    'comparisonSettings.provider': 'Provider',
+    'comparisonSettings.models': 'Models',
+    'comparisonSettings.noModels': 'No models selected.',
     'comparison.title': 'Model comparison',
     'card.lowestCost': 'Lowest cost',
     'card.inputPrice': 'Input price',
@@ -130,6 +288,12 @@ const translations = {
     'calculator.inputTokens': '每次请求输入 Token 数',
     'calculator.outputTokens': '每次请求输出 Token 数',
     'calculator.requestsPerDay': '每日请求次数',
+    'comparisonSettings.title': '对比设置',
+    'comparisonSettings.sameProvider': '同品牌对比',
+    'comparisonSettings.crossProvider': '跨品牌对比',
+    'comparisonSettings.provider': '品牌',
+    'comparisonSettings.models': '模型',
+    'comparisonSettings.noModels': '尚未选择模型。',
     'comparison.title': '模型成本对比',
     'card.lowestCost': '成本最低',
     'card.inputPrice': '输入价格',
@@ -232,20 +396,182 @@ function format30Days(cost) {
  * @param {number} requestsPerDay
  * @returns {Object}
  */
+/**
+ * Return effective input and output token prices based on input tokens and long-context rules
+ * @param {Object} model
+ * @param {number} inputTokens
+ * @returns {{ inputPrice: number, outputPrice: number }}
+ */
+function getEffectivePrices(model, inputTokens) {
+  if (!model.longContext) {
+    return {
+      inputPrice: model.inputPrice,
+      outputPrice: model.outputPrice
+    };
+  }
+
+  const { threshold, inclusive, inputPrice, outputPrice } = model.longContext;
+  const isLongContext = inclusive ? inputTokens >= threshold : inputTokens > threshold;
+
+  if (isLongContext) {
+    return { inputPrice, outputPrice };
+  }
+
+  return {
+    inputPrice: model.inputPrice,
+    outputPrice: model.outputPrice
+  };
+}
+
+/**
+ * Calculate cost for a single model using effective prices
+ * @param {Object} model
+ * @param {number} inputTokens
+ * @param {number} outputTokens
+ * @param {number} requestsPerDay
+ * @returns {Object}
+ */
 function calculateModelCost(model, inputTokens, outputTokens, requestsPerDay) {
+  const { inputPrice, outputPrice } = getEffectivePrices(model, inputTokens);
+
   const costPerRequest =
-    (inputTokens / 1000000) * model.inputPrice +
-    (outputTokens / 1000000) * model.outputPrice;
+    (inputTokens / 1000000) * inputPrice +
+    (outputTokens / 1000000) * outputPrice;
 
   const costPerDay = costPerRequest * requestsPerDay;
   const cost30Days = costPerDay * 30;
 
   return {
     ...model,
+    effectiveInputPrice: inputPrice,
+    effectiveOutputPrice: outputPrice,
     costPerRequest,
     costPerDay,
     cost30Days
   };
+}
+
+const ALL_PROVIDERS = [...new Set(MODEL_PRICING.map(item => item.provider))];
+
+let currentSameProvider = 'OpenAI';
+
+// Track selected model names per provider for Same provider mode (initially all models selected)
+const sameProviderSelected = {};
+ALL_PROVIDERS.forEach(p => {
+  sameProviderSelected[p] = new Set(
+    MODEL_PRICING.filter(m => m.provider === p).map(m => m.model)
+  );
+});
+
+// Track selected model names for Cross provider mode (initial default 4 models)
+const crossProviderSelected = new Set([
+  'GPT-5.6 Terra',
+  'Claude Sonnet 5',
+  'Gemini 3.8 Flash',
+  'Grok 4.6'
+]);
+
+/**
+ * Return subset of MODEL_PRICING that should participate in comparison
+ * @returns {Array}
+ */
+function getSelectedModels() {
+  if (comparisonMode === 'same') {
+    const selectedSet = sameProviderSelected[currentSameProvider] || new Set();
+    return MODEL_PRICING.filter((item) => item.provider === currentSameProvider && selectedSet.has(item.model));
+  }
+
+  // Cross provider mode
+  return MODEL_PRICING.filter((item) => crossProviderSelected.has(item.model));
+}
+
+/**
+ * Render checkboxes for models under the current provider in Same provider mode
+ */
+function renderSameProviderCheckboxes() {
+  const container = document.getElementById('same-provider-models');
+  if (!container) return;
+
+  const models = MODEL_PRICING.filter(m => m.provider === currentSameProvider);
+  const selectedSet = sameProviderSelected[currentSameProvider] || new Set();
+
+  container.innerHTML = models.map(m => {
+    const isChecked = selectedSet.has(m.model) ? 'checked' : '';
+    return `
+      <label class="model-checkbox-label">
+        <input type="checkbox" class="same-model-checkbox" value="${m.model}" ${isChecked}>
+        <span class="model-label-text">${m.model}</span>
+      </label>
+    `;
+  }).join('');
+}
+
+/**
+ * Render grouped checkboxes for all providers in Cross provider mode
+ */
+function renderCrossProviderGroups() {
+  const container = document.getElementById('cross-provider-groups');
+  if (!container) return;
+
+  container.innerHTML = ALL_PROVIDERS.map(provider => {
+    const models = MODEL_PRICING.filter(m => m.provider === provider);
+    const checkboxesHtml = models.map(m => {
+      const isChecked = crossProviderSelected.has(m.model) ? 'checked' : '';
+      return `
+        <label class="model-checkbox-label">
+          <input type="checkbox" class="cross-model-checkbox" data-provider="${provider}" value="${m.model}" ${isChecked}>
+          <span class="model-label-text">${m.model}</span>
+        </label>
+      `;
+    }).join('');
+
+    return `
+      <div class="cross-provider-group">
+        <h3 class="provider-group-title">${provider}</h3>
+        <div class="model-checkbox-grid">
+          ${checkboxesHtml}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/**
+ * Switch comparison mode between 'same' and 'cross'
+ * @param {string} mode - 'same' | 'cross'
+ */
+function setComparisonMode(mode) {
+  if (mode !== 'same' && mode !== 'cross') return;
+  comparisonMode = mode;
+
+  const sameBtn = document.getElementById('mode-btn-same');
+  const crossBtn = document.getElementById('mode-btn-cross');
+  const sameControls = document.getElementById('same-provider-controls');
+  const crossControls = document.getElementById('cross-provider-controls');
+
+  const isSame = mode === 'same';
+
+  if (sameBtn) {
+    sameBtn.classList.toggle('active', isSame);
+    sameBtn.setAttribute('aria-pressed', String(isSame));
+  }
+  if (crossBtn) {
+    crossBtn.classList.toggle('active', !isSame);
+    crossBtn.setAttribute('aria-pressed', String(!isSame));
+  }
+
+  if (sameControls) {
+    sameControls.hidden = !isSame;
+  }
+  if (crossControls) {
+    crossControls.hidden = isSame;
+  }
+
+  if (isSame) {
+    renderSameProviderCheckboxes();
+  }
+
+  updateComparison();
 }
 
 /**
@@ -256,10 +582,15 @@ function renderModelCards(modelsWithCost) {
   const container = document.getElementById('model-grid');
   if (!container) return;
 
+  if (modelsWithCost.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state" data-i18n="comparisonSettings.noModels">No models selected.</div>
+    `;
+    return;
+  }
+
   // Identify minimum 30-day cost
-  const minCost = modelsWithCost.length > 0
-    ? Math.min(...modelsWithCost.map(m => m.cost30Days))
-    : 0;
+  const minCost = Math.min(...modelsWithCost.map(m => m.cost30Days));
 
   container.innerHTML = modelsWithCost.map((item) => {
     const isLowest = Math.abs(item.cost30Days - minCost) < 1e-10;
@@ -280,11 +611,11 @@ function renderModelCards(modelsWithCost) {
         <div class="card-metrics">
           <div class="metric-row">
             <span class="metric-label" data-i18n="card.inputPrice">Input price</span>
-            <span class="metric-value">${formatTokenPrice(item.inputPrice)}</span>
+            <span class="metric-value">${formatTokenPrice(item.effectiveInputPrice ?? item.inputPrice)}</span>
           </div>
           <div class="metric-row">
             <span class="metric-label" data-i18n="card.outputPrice">Output price</span>
-            <span class="metric-value">${formatTokenPrice(item.outputPrice)}</span>
+            <span class="metric-value">${formatTokenPrice(item.effectiveOutputPrice ?? item.outputPrice)}</span>
           </div>
           <div class="metric-row">
             <span class="metric-label" data-i18n="card.perRequest">Per request</span>
@@ -317,15 +648,17 @@ function updateComparison() {
   const outputTokens = parseNonNegativeNumber(outputTokensVal);
   const requestsPerDay = parseNonNegativeNumber(requestsPerDayVal);
 
+  const selectedModels = getSelectedModels();
+
   // Calculate costs without mutating original MODEL_PRICING array
-  const calculated = MODEL_PRICING.map((model) =>
+  const calculated = selectedModels.map((model) =>
     calculateModelCost(model, inputTokens, outputTokens, requestsPerDay)
   );
 
   // Sort ascending by 30-day estimate
   calculated.sort((a, b) => a.cost30Days - b.cost30Days);
 
-  // Render cards
+  // Render cards or empty state
   renderModelCards(calculated);
 
   // Ensure current language translations are correctly applied to the newly rendered cards
@@ -420,6 +753,73 @@ document.addEventListener('DOMContentLoaded', () => {
       el.addEventListener('input', updateComparison);
     }
   });
+
+  // Bind comparison mode switcher
+  const modeGroup = document.querySelector('.mode-switch-group');
+  if (modeGroup) {
+    modeGroup.addEventListener('click', (event) => {
+      const btn = event.target.closest('.mode-btn');
+      if (btn) {
+        const mode = btn.getAttribute('data-mode');
+        if (mode && mode !== comparisonMode) {
+          setComparisonMode(mode);
+        }
+      }
+    });
+  }
+
+  // Populate Same provider select options dynamically
+  const sameProviderSelect = document.getElementById('same-provider-select');
+  if (sameProviderSelect) {
+    sameProviderSelect.innerHTML = ALL_PROVIDERS.map(p => `<option value="${p}">${p}</option>`).join('');
+    sameProviderSelect.value = currentSameProvider;
+    sameProviderSelect.addEventListener('change', (event) => {
+      currentSameProvider = event.target.value;
+      renderSameProviderCheckboxes();
+      updateComparison();
+    });
+  }
+
+  // Initial render of model checkboxes
+  renderSameProviderCheckboxes();
+  renderCrossProviderGroups();
+
+  // Bind Same provider model checkboxes change event delegation
+  const sameModelsContainer = document.getElementById('same-provider-models');
+  if (sameModelsContainer) {
+    sameModelsContainer.addEventListener('change', (event) => {
+      const cb = event.target.closest('.same-model-checkbox');
+      if (cb) {
+        const modelName = cb.value;
+        if (!sameProviderSelected[currentSameProvider]) {
+          sameProviderSelected[currentSameProvider] = new Set();
+        }
+        if (cb.checked) {
+          sameProviderSelected[currentSameProvider].add(modelName);
+        } else {
+          sameProviderSelected[currentSameProvider].delete(modelName);
+        }
+        updateComparison();
+      }
+    });
+  }
+
+  // Bind Cross provider model checkboxes change event delegation
+  const crossGroupsContainer = document.getElementById('cross-provider-groups');
+  if (crossGroupsContainer) {
+    crossGroupsContainer.addEventListener('change', (event) => {
+      const cb = event.target.closest('.cross-model-checkbox');
+      if (cb) {
+        const modelName = cb.value;
+        if (cb.checked) {
+          crossProviderSelected.add(modelName);
+        } else {
+          crossProviderSelected.delete(modelName);
+        }
+        updateComparison();
+      }
+    });
+  }
 
   // Bind language switcher
   const langSwitch = document.querySelector('.lang-switch');
