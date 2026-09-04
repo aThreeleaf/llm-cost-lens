@@ -64,7 +64,7 @@
                 name="requests-per-day"
                 class="field-input"
                 value="100"
-                min="1"
+                min="0"
                 step="1"
               >
             </div>
@@ -76,123 +76,9 @@
       <section class="section comparison-section" aria-labelledby="comparison-heading">
         <div class="section-header comparison-header">
           <h2 id="comparison-heading" class="section-title" data-i18n="comparison.title">Model comparison</h2>
-          <span class="badge badge-demo" data-i18n="common.demoData">Demo data</span>
         </div>
 
-        <div class="model-grid">
-          <!-- Card: Model Alpha -->
-          <article class="model-card">
-            <div class="card-header">
-              <div class="model-info">
-                <span class="provider-name">Provider Alpha</span>
-                <h3 class="model-name">Model Alpha</h3>
-              </div>
-              <div class="card-badge-container">
-                <!-- Reserved UI for Lowest cost badge (hidden by default until calculation logic is implemented) -->
-                <span class="badge badge-lowest" data-i18n="card.lowestCost" hidden>Lowest cost</span>
-                <span class="badge badge-demo" data-i18n="common.demoData">Demo data</span>
-              </div>
-            </div>
-
-            <div class="card-metrics">
-              <div class="metric-row">
-                <span class="metric-label" data-i18n="card.inputPrice">Input price</span>
-                <span class="metric-value">—</span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-label" data-i18n="card.outputPrice">Output price</span>
-                <span class="metric-value">—</span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-label" data-i18n="card.perRequest">Per request</span>
-                <span class="metric-value">—</span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-label" data-i18n="card.perDay">Per day</span>
-                <span class="metric-value">—</span>
-              </div>
-            </div>
-
-            <div class="card-footer">
-              <span class="estimate-label" data-i18n="card.estimate30Day">30-day estimate</span>
-              <span class="estimate-value">—</span>
-            </div>
-          </article>
-
-          <!-- Card: Model Beta -->
-          <article class="model-card">
-            <div class="card-header">
-              <div class="model-info">
-                <span class="provider-name">Provider Beta</span>
-                <h3 class="model-name">Model Beta</h3>
-              </div>
-              <div class="card-badge-container">
-                <span class="badge badge-demo" data-i18n="common.demoData">Demo data</span>
-              </div>
-            </div>
-
-            <div class="card-metrics">
-              <div class="metric-row">
-                <span class="metric-label" data-i18n="card.inputPrice">Input price</span>
-                <span class="metric-value">—</span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-label" data-i18n="card.outputPrice">Output price</span>
-                <span class="metric-value">—</span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-label" data-i18n="card.perRequest">Per request</span>
-                <span class="metric-value">—</span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-label" data-i18n="card.perDay">Per day</span>
-                <span class="metric-value">—</span>
-              </div>
-            </div>
-
-            <div class="card-footer">
-              <span class="estimate-label" data-i18n="card.estimate30Day">30-day estimate</span>
-              <span class="estimate-value">—</span>
-            </div>
-          </article>
-
-          <!-- Card: Model Gamma -->
-          <article class="model-card">
-            <div class="card-header">
-              <div class="model-info">
-                <span class="provider-name">Provider Gamma</span>
-                <h3 class="model-name">Model Gamma</h3>
-              </div>
-              <div class="card-badge-container">
-                <span class="badge badge-demo" data-i18n="common.demoData">Demo data</span>
-              </div>
-            </div>
-
-            <div class="card-metrics">
-              <div class="metric-row">
-                <span class="metric-label" data-i18n="card.inputPrice">Input price</span>
-                <span class="metric-value">—</span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-label" data-i18n="card.outputPrice">Output price</span>
-                <span class="metric-value">—</span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-label" data-i18n="card.perRequest">Per request</span>
-                <span class="metric-value">—</span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-label" data-i18n="card.perDay">Per day</span>
-                <span class="metric-value">—</span>
-              </div>
-            </div>
-
-            <div class="card-footer">
-              <span class="estimate-label" data-i18n="card.estimate30Day">30-day estimate</span>
-              <span class="estimate-value">—</span>
-            </div>
-          </article>
-        </div>
+        <div class="model-grid" id="model-grid"></div>
       </section>
 
       <!-- Details Section: Pricing Info & Known Limitations -->
@@ -200,10 +86,11 @@
         <!-- Pricing Sources -->
         <section class="section detail-box" aria-labelledby="pricing-sources-heading">
           <h2 id="pricing-sources-heading" class="section-title" data-i18n="pricing.title">Pricing sources</h2>
-          <p class="detail-description" data-i18n="pricing.description">Official pricing sources will be added after verification.</p>
+          <ul class="sources-list" id="sources-list"></ul>
+          <p class="pricing-note" data-i18n="pricing.note">Prices are snapshots from official provider documentation and may change over time.</p>
           <div class="audit-status">
             <span class="audit-label" data-i18n="pricing.lastChecked">Last checked:</span>
-            <span class="audit-value" data-i18n="pricing.pendingVerification">Pending verification</span>
+            <span class="audit-value" id="last-checked-value"></span>
           </div>
         </section>
 
@@ -220,10 +107,6 @@
         </section>
       </div>
     </main>
-
-    <footer class="footer">
-      <p class="footer-note" data-i18n="footer.note">LLM Cost Lens &mdash; Phase 1 Skeleton</p>
-    </footer>
   </div>
 
   <script src="script.js"></script>
