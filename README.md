@@ -136,7 +136,8 @@ This project was built using an AI-assisted development workflow. AI tools suppo
 - Independent code review and QA: Codex
 - Final decisions, requirement changes, validation, and Git commits: human developer
 
-[Read the full AI collaboration record](docs/ai-collaboration.md)
+[Read the full AI collaboration record](docs/ai-collaboration.md)  
+[Read the project retrospective](docs/retrospective.md)
 
 ---
 

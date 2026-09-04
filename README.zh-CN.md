@@ -136,7 +136,8 @@ python -m http.server 8000
 - 独立代码审查与 QA：Codex
 - 最终技术决策、需求变更、手工验证与 Git 提交：人类开发者
 
-[查看完整 AI 协作开发记录](docs/ai-collaboration.md)
+[查看完整 AI 协作开发记录](docs/ai-collaboration.md)  
+[阅读项目开发复盘](docs/retrospective.md)
 
 ---
 
